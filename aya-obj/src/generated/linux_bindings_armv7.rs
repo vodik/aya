@@ -132,6 +132,7 @@ pub const BPF_F_TEST_RND_HI32: u32 = 4;
 pub const BPF_F_TEST_STATE_FREQ: u32 = 8;
 pub const BPF_F_SLEEPABLE: u32 = 16;
 pub const BPF_F_XDP_HAS_FRAGS: u32 = 32;
+pub const BPF_F_XDP_DEV_BOUND_ONLY: u32 = 64;
 pub const BPF_F_KPROBE_MULTI_RETURN: u32 = 1;
 pub const BPF_PSEUDO_MAP_FD: u32 = 1;
 pub const BPF_PSEUDO_MAP_IDX: u32 = 5;
@@ -161,6 +162,7 @@ pub const XDP_FLAGS_HW_MODE: u32 = 8;
 pub const XDP_FLAGS_REPLACE: u32 = 16;
 pub const XDP_FLAGS_MODES: u32 = 14;
 pub const XDP_FLAGS_MASK: u32 = 31;
+pub const XDP_UMEM_REG: u32 = 4;
 pub const SO_ATTACH_BPF: u32 = 50;
 pub const SO_DETACH_BPF: u32 = 27;
 pub const TC_H_MAJ_MASK: u32 = 4294901760;
@@ -173,6 +175,11 @@ pub const TC_H_MIN_PRIORITY: u32 = 65504;
 pub const TC_H_MIN_INGRESS: u32 = 65522;
 pub const TC_H_MIN_EGRESS: u32 = 65523;
 pub const TCA_BPF_FLAG_ACT_DIRECT: u32 = 1;
+pub const XSK_RING_CONS__DEFAULT_NUM_DESCS: u32 = 2048;
+pub const XSK_RING_PROD__DEFAULT_NUM_DESCS: u32 = 2048;
+pub const XSK_UMEM__DEFAULT_FRAME_SIZE: u32 = 4096;
+pub const XSK_UMEM__DEFAULT_FRAME_HEADROOM: u32 = 0;
+pub const XSK_UMEM__DEFAULT_FLAGS: u32 = 0;
 pub type __u8 = ::core::ffi::c_uchar;
 pub type __s16 = ::core::ffi::c_short;
 pub type __u16 = ::core::ffi::c_ushort;
@@ -754,6 +761,8 @@ pub const BPF_F_ADJ_ROOM_ENCAP_L4_GRE: _bindgen_ty_15 = 8;
 pub const BPF_F_ADJ_ROOM_ENCAP_L4_UDP: _bindgen_ty_15 = 16;
 pub const BPF_F_ADJ_ROOM_NO_CSUM_RESET: _bindgen_ty_15 = 32;
 pub const BPF_F_ADJ_ROOM_ENCAP_L2_ETH: _bindgen_ty_15 = 64;
+pub const BPF_F_ADJ_ROOM_DECAP_L3_IPV4: _bindgen_ty_15 = 128;
+pub const BPF_F_ADJ_ROOM_DECAP_L3_IPV6: _bindgen_ty_15 = 256;
 pub type _bindgen_ty_15 = ::core::ffi::c_uint;
 pub const BPF_F_SYSCTL_BASE_NAME: _bindgen_ty_17 = 1;
 pub type _bindgen_ty_17 = ::core::ffi::c_uint;
@@ -2054,6 +2063,15 @@ pub const __IFLA_XDP_MAX: _bindgen_ty_89 = 9;
 pub type _bindgen_ty_89 = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct xdp_umem_reg {
+    pub addr: __u64,
+    pub len: __u64,
+    pub chunk_size: __u32,
+    pub headroom: __u32,
+    pub flags: __u32,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ifinfomsg {
     pub ifi_family: ::core::ffi::c_uchar,
     pub __ifi_pad: ::core::ffi::c_uchar,
@@ -2073,37 +2091,67 @@ pub struct tcmsg {
     pub tcm_parent: __u32,
     pub tcm_info: __u32,
 }
-pub const TCA_UNSPEC: _bindgen_ty_102 = 0;
-pub const TCA_KIND: _bindgen_ty_102 = 1;
-pub const TCA_OPTIONS: _bindgen_ty_102 = 2;
-pub const TCA_STATS: _bindgen_ty_102 = 3;
-pub const TCA_XSTATS: _bindgen_ty_102 = 4;
-pub const TCA_RATE: _bindgen_ty_102 = 5;
-pub const TCA_FCNT: _bindgen_ty_102 = 6;
-pub const TCA_STATS2: _bindgen_ty_102 = 7;
-pub const TCA_STAB: _bindgen_ty_102 = 8;
-pub const TCA_PAD: _bindgen_ty_102 = 9;
-pub const TCA_DUMP_INVISIBLE: _bindgen_ty_102 = 10;
-pub const TCA_CHAIN: _bindgen_ty_102 = 11;
-pub const TCA_HW_OFFLOAD: _bindgen_ty_102 = 12;
-pub const TCA_INGRESS_BLOCK: _bindgen_ty_102 = 13;
-pub const TCA_EGRESS_BLOCK: _bindgen_ty_102 = 14;
-pub const __TCA_MAX: _bindgen_ty_102 = 15;
-pub type _bindgen_ty_102 = ::core::ffi::c_uint;
-pub const TCA_BPF_UNSPEC: _bindgen_ty_158 = 0;
-pub const TCA_BPF_ACT: _bindgen_ty_158 = 1;
-pub const TCA_BPF_POLICE: _bindgen_ty_158 = 2;
-pub const TCA_BPF_CLASSID: _bindgen_ty_158 = 3;
-pub const TCA_BPF_OPS_LEN: _bindgen_ty_158 = 4;
-pub const TCA_BPF_OPS: _bindgen_ty_158 = 5;
-pub const TCA_BPF_FD: _bindgen_ty_158 = 6;
-pub const TCA_BPF_NAME: _bindgen_ty_158 = 7;
-pub const TCA_BPF_FLAGS: _bindgen_ty_158 = 8;
-pub const TCA_BPF_FLAGS_GEN: _bindgen_ty_158 = 9;
-pub const TCA_BPF_TAG: _bindgen_ty_158 = 10;
-pub const TCA_BPF_ID: _bindgen_ty_158 = 11;
-pub const __TCA_BPF_MAX: _bindgen_ty_158 = 12;
-pub type _bindgen_ty_158 = ::core::ffi::c_uint;
+pub const TCA_UNSPEC: _bindgen_ty_104 = 0;
+pub const TCA_KIND: _bindgen_ty_104 = 1;
+pub const TCA_OPTIONS: _bindgen_ty_104 = 2;
+pub const TCA_STATS: _bindgen_ty_104 = 3;
+pub const TCA_XSTATS: _bindgen_ty_104 = 4;
+pub const TCA_RATE: _bindgen_ty_104 = 5;
+pub const TCA_FCNT: _bindgen_ty_104 = 6;
+pub const TCA_STATS2: _bindgen_ty_104 = 7;
+pub const TCA_STAB: _bindgen_ty_104 = 8;
+pub const TCA_PAD: _bindgen_ty_104 = 9;
+pub const TCA_DUMP_INVISIBLE: _bindgen_ty_104 = 10;
+pub const TCA_CHAIN: _bindgen_ty_104 = 11;
+pub const TCA_HW_OFFLOAD: _bindgen_ty_104 = 12;
+pub const TCA_INGRESS_BLOCK: _bindgen_ty_104 = 13;
+pub const TCA_EGRESS_BLOCK: _bindgen_ty_104 = 14;
+pub const TCA_DUMP_FLAGS: _bindgen_ty_104 = 15;
+pub const __TCA_MAX: _bindgen_ty_104 = 16;
+pub type _bindgen_ty_104 = ::core::ffi::c_uint;
+pub const TCA_BPF_UNSPEC: _bindgen_ty_160 = 0;
+pub const TCA_BPF_ACT: _bindgen_ty_160 = 1;
+pub const TCA_BPF_POLICE: _bindgen_ty_160 = 2;
+pub const TCA_BPF_CLASSID: _bindgen_ty_160 = 3;
+pub const TCA_BPF_OPS_LEN: _bindgen_ty_160 = 4;
+pub const TCA_BPF_OPS: _bindgen_ty_160 = 5;
+pub const TCA_BPF_FD: _bindgen_ty_160 = 6;
+pub const TCA_BPF_NAME: _bindgen_ty_160 = 7;
+pub const TCA_BPF_FLAGS: _bindgen_ty_160 = 8;
+pub const TCA_BPF_FLAGS_GEN: _bindgen_ty_160 = 9;
+pub const TCA_BPF_TAG: _bindgen_ty_160 = 10;
+pub const TCA_BPF_ID: _bindgen_ty_160 = 11;
+pub const __TCA_BPF_MAX: _bindgen_ty_160 = 12;
+pub type _bindgen_ty_160 = ::core::ffi::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xsk_ring_prod {
+    pub cached_prod: __u32,
+    pub cached_cons: __u32,
+    pub mask: __u32,
+    pub size: __u32,
+    pub producer: *mut __u32,
+    pub consumer: *mut __u32,
+    pub ring: *mut ::core::ffi::c_void,
+    pub flags: *mut __u32,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xsk_ring_cons {
+    pub cached_prod: __u32,
+    pub cached_cons: __u32,
+    pub mask: __u32,
+    pub size: __u32,
+    pub producer: *mut __u32,
+    pub consumer: *mut __u32,
+    pub ring: *mut ::core::ffi::c_void,
+    pub flags: *mut __u32,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xsk_umem {
+    _unused: [u8; 0],
+}
 pub const AYA_PERF_EVENT_IOC_ENABLE: ::core::ffi::c_int = 9216;
 pub const AYA_PERF_EVENT_IOC_DISABLE: ::core::ffi::c_int = 9217;
 pub const AYA_PERF_EVENT_IOC_SET_BPF: ::core::ffi::c_int = 1074013192;

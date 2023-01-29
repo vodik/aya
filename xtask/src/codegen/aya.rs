@@ -35,6 +35,19 @@ fn codegen_internal_btf_bindings(opts: &Options) -> Result<(), anyhow::Error> {
                 .join("src/libbpf_internal.h")
                 .to_string_lossy(),
         )
+        .clang_arg(format!(
+            "-I{}",
+            opts.xdp_tools_dir
+                .join("headers")
+                .canonicalize()
+                .unwrap()
+                .to_string_lossy()
+        ))
+        .header(
+            opts.xdp_tools_dir
+                .join("lib/libxdp/libxdp_internal.h")
+                .to_string_lossy(),
+        )
         .constified_enum_module("bpf_core_relo_kind");
 
     let types = ["bpf_core_relo", "btf_ext_header"];
@@ -100,6 +113,13 @@ fn codegen_bindings(opts: &Options) -> Result<(), anyhow::Error> {
         // NETLINK
         "ifinfomsg",
         "tcmsg",
+        // XSK
+        "xsk_umem",
+        "xsk_umem_info",
+        "xsk_ring_prod",
+        "xsk_ring_cons",
+        // XDP
+        "xdp_umem_reg",
     ];
 
     let vars = [
@@ -152,6 +172,13 @@ fn codegen_bindings(opts: &Options) -> Result<(), anyhow::Error> {
         "TC_H_MIN_EGRESS",
         // Ringbuf
         "BPF_RINGBUF_.*",
+        // xsk
+        "XDP_UMEM_REG",
+        "XSK_RING_PROD__DEFAULT_NUM_DESCS",
+        "XSK_RING_CONS__DEFAULT_NUM_DESCS",
+        "XSK_UMEM__DEFAULT_FRAME_SIZE",
+        "XSK_UMEM__DEFAULT_FRAME_HEADROOM",
+        "XSK_UMEM__DEFAULT_FLAGS",
     ];
 
     let dir = PathBuf::from("aya-obj");
@@ -165,6 +192,7 @@ fn codegen_bindings(opts: &Options) -> Result<(), anyhow::Error> {
                 &*opts.libbpf_dir.join("include/uapi").to_string_lossy(),
             ])
             .clang_args(&["-I", &*opts.libbpf_dir.join("include").to_string_lossy()])
+            .clang_args(&["-I", &*opts.xdp_tools_dir.join("headers").to_string_lossy()])
     };
 
     for arch in Architecture::supported() {

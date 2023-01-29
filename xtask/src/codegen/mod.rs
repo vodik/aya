@@ -57,6 +57,9 @@ pub struct Options {
     #[arg(long, action)]
     libbpf_dir: PathBuf,
 
+    #[arg(long, action)]
+    xdp_tools_dir: PathBuf,
+
     // sysroot options. Default to ubuntu headers installed by the
     // libc6-dev-{arm64,armel}-cross packages.
     #[arg(long, default_value = "/usr/include/x86_64-linux-gnu", action)]

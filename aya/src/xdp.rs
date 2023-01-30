@@ -1,9 +1,10 @@
 //! TEST
 use aya_obj::generated::{
     xdp_mmap_offsets, xdp_umem_reg, xsk_ring_cons, xsk_ring_prod, XDP_MMAP_OFFSETS,
-    XDP_UMEM_COMPLETION_RING, XDP_UMEM_FILL_RING, XDP_UMEM_PGOFF_FILL_RING, XDP_UMEM_REG,
-    XSK_RING_CONS__DEFAULT_NUM_DESCS, XSK_RING_PROD__DEFAULT_NUM_DESCS, XSK_UMEM__DEFAULT_FLAGS,
-    XSK_UMEM__DEFAULT_FRAME_HEADROOM, XSK_UMEM__DEFAULT_FRAME_SIZE,
+    XDP_UMEM_COMPLETION_RING, XDP_UMEM_FILL_RING, XDP_UMEM_PGOFF_COMPLETION_RING,
+    XDP_UMEM_PGOFF_FILL_RING, XDP_UMEM_REG, XSK_RING_CONS__DEFAULT_NUM_DESCS,
+    XSK_RING_PROD__DEFAULT_NUM_DESCS, XSK_UMEM__DEFAULT_FLAGS, XSK_UMEM__DEFAULT_FRAME_HEADROOM,
+    XSK_UMEM__DEFAULT_FRAME_SIZE,
 };
 use libc::{
     mmap, setsockopt, socket, AF_XDP, MAP_FAILED, MAP_POPULATE, MAP_SHARED, PROT_READ, PROT_WRITE,
@@ -104,7 +105,7 @@ impl<'a> Umem<'a> {
                 ptr::null_mut(),
                 off.fr.desc as usize + fill_size as usize * mem::size_of::<u64>(),
                 PROT_READ | PROT_WRITE,
-                MAP_POPULATE | MAP_SHARED,
+                MAP_SHARED | MAP_POPULATE,
                 sock,
                 XDP_UMEM_PGOFF_FILL_RING as _,
             )
@@ -113,26 +114,42 @@ impl<'a> Umem<'a> {
             return Err(io::Error::last_os_error());
         }
 
-        let map = map as *mut u32;
+        let prod_map = map as *mut u32;
+
+        let map = unsafe {
+            mmap(
+                ptr::null_mut(),
+                off.cr.desc as usize + comp_size as usize * mem::size_of::<u64>(),
+                PROT_READ | PROT_WRITE,
+                MAP_SHARED | MAP_POPULATE,
+                sock,
+                XDP_UMEM_PGOFF_COMPLETION_RING as _,
+            )
+        };
+        if map == MAP_FAILED {
+            return Err(io::Error::last_os_error());
+        }
+
+        let cons_map = map as *mut u32;
 
         Ok(Self {
             fq: xsk_ring_prod {
                 mask: fill_size - 1,
                 size: fill_size,
-                producer: unsafe { map.offset(off.fr.producer as _) },
-                consumer: unsafe { map.offset(off.fr.consumer as _) },
-                flags: unsafe { map.offset(off.fr.flags as _) },
-                ring: unsafe { map.offset(off.fr.desc as _) } as *mut _,
+                producer: unsafe { prod_map.offset(off.fr.producer as _) },
+                consumer: unsafe { prod_map.offset(off.fr.consumer as _) },
+                flags: unsafe { prod_map.offset(off.fr.flags as _) },
+                ring: unsafe { prod_map.offset(off.fr.desc as _) } as *mut _,
                 cached_cons: fill_size as _,
                 cached_prod: 0,
             },
             cq: xsk_ring_cons {
                 mask: comp_size - 1,
                 size: comp_size,
-                producer: unsafe { map.offset(off.cr.producer as _) },
-                consumer: unsafe { map.offset(off.cr.consumer as _) },
-                flags: unsafe { map.offset(off.cr.flags as _) },
-                ring: unsafe { map.offset(off.cr.desc as _) } as *mut _,
+                producer: unsafe { cons_map.offset(off.cr.producer as _) },
+                consumer: unsafe { cons_map.offset(off.cr.consumer as _) },
+                flags: unsafe { cons_map.offset(off.cr.flags as _) },
+                ring: unsafe { cons_map.offset(off.cr.desc as _) } as *mut _,
                 cached_cons: 0,
                 cached_prod: 0,
             },

@@ -162,7 +162,12 @@ pub const XDP_FLAGS_HW_MODE: u32 = 8;
 pub const XDP_FLAGS_REPLACE: u32 = 16;
 pub const XDP_FLAGS_MODES: u32 = 14;
 pub const XDP_FLAGS_MASK: u32 = 31;
+pub const XDP_MMAP_OFFSETS: u32 = 1;
 pub const XDP_UMEM_REG: u32 = 4;
+pub const XDP_UMEM_FILL_RING: u32 = 5;
+pub const XDP_UMEM_COMPLETION_RING: u32 = 6;
+pub const XDP_UMEM_PGOFF_FILL_RING: u64 = 4294967296;
+pub const XDP_UMEM_PGOFF_COMPLETION_RING: u64 = 6442450944;
 pub const SO_ATTACH_BPF: u32 = 50;
 pub const SO_DETACH_BPF: u32 = 27;
 pub const TC_H_MAJ_MASK: u32 = 4294901760;
@@ -2063,6 +2068,22 @@ pub const __IFLA_XDP_MAX: _bindgen_ty_89 = 9;
 pub type _bindgen_ty_89 = ::core::ffi::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct xdp_ring_offset {
+    pub producer: __u64,
+    pub consumer: __u64,
+    pub desc: __u64,
+    pub flags: __u64,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xdp_mmap_offsets {
+    pub rx: xdp_ring_offset,
+    pub tx: xdp_ring_offset,
+    pub fr: xdp_ring_offset,
+    pub cr: xdp_ring_offset,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct xdp_umem_reg {
     pub addr: __u64,
     pub len: __u64,
@@ -2146,11 +2167,6 @@ pub struct xsk_ring_cons {
     pub consumer: *mut __u32,
     pub ring: *mut ::core::ffi::c_void,
     pub flags: *mut __u32,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct xsk_umem {
-    _unused: [u8; 0],
 }
 pub const AYA_PERF_EVENT_IOC_ENABLE: ::core::ffi::c_int = 9216;
 pub const AYA_PERF_EVENT_IOC_DISABLE: ::core::ffi::c_int = 9217;

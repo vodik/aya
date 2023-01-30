@@ -114,11 +114,11 @@ fn codegen_bindings(opts: &Options) -> Result<(), anyhow::Error> {
         "ifinfomsg",
         "tcmsg",
         // XSK
-        "xsk_umem",
-        "xsk_umem_info",
         "xsk_ring_prod",
         "xsk_ring_cons",
+        "xsk_umem_info",
         // XDP
+        "xdp_mmap_offsets",
         "xdp_umem_reg",
     ];
 
@@ -172,8 +172,14 @@ fn codegen_bindings(opts: &Options) -> Result<(), anyhow::Error> {
         "TC_H_MIN_EGRESS",
         // Ringbuf
         "BPF_RINGBUF_.*",
-        // xsk
+        // xdp
+        "XDP_MMAP_OFFSETS",
         "XDP_UMEM_REG",
+        "XDP_UMEM_FILL_RING",
+        "XDP_UMEM_COMPLETION_RING",
+        "XDP_UMEM_PGOFF_FILL_RING",
+        "XDP_UMEM_PGOFF_COMPLETION_RING",
+        // xsk
         "XSK_RING_PROD__DEFAULT_NUM_DESCS",
         "XSK_RING_CONS__DEFAULT_NUM_DESCS",
         "XSK_UMEM__DEFAULT_FRAME_SIZE",

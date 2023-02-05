@@ -11,10 +11,28 @@ use libc::{
     SOCK_RAW, SOL_XDP,
 };
 use std::{
-    io,
+    alloc, io,
     mem::{self, MaybeUninit},
     ptr,
 };
+
+/// WIP - will move into the main repo
+pub fn allocate_area(len: usize) -> Box<[u8]> {
+    let pagesize = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+
+    let layout = alloc::Layout::from_size_align(len, pagesize).unwrap();
+    let ptr = unsafe { alloc::alloc_zeroed(layout) };
+
+    unsafe { Box::from_raw(core::ptr::slice_from_raw_parts_mut(ptr, len)) }
+}
+
+/// WIP - sanity check, probably unneeded
+pub fn check_mem_aligned(buf: &[u8]) -> usize {
+    let pagesize = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+
+    let addr: usize = buf.as_ptr() as _;
+    !(addr & (pagesize - 1))
+}
 
 /// WIP
 pub struct Umem<'a> {
@@ -26,7 +44,7 @@ pub struct Umem<'a> {
 
 impl<'a> Umem<'a> {
     /// WIP
-    pub fn open(umem_area: &'a mut [u8]) -> Result<Self, io::Error> {
+    pub fn new(umem_area: &'a mut [u8]) -> Result<Self, io::Error> {
         let sock = unsafe { socket(AF_XDP, SOCK_RAW, 0) };
         if sock < 0 {
             return Err(io::Error::last_os_error());

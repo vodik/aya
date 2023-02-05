@@ -17,6 +17,7 @@ pub mod sock_hash;
 pub mod sock_map;
 pub mod stack;
 pub mod stack_trace;
+pub mod xsk_map;
 
 pub use array::Array;
 pub use bloom_filter::BloomFilter;

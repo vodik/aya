@@ -7,8 +7,8 @@ use aya_obj::generated::{
     XSK_UMEM__DEFAULT_FRAME_SIZE,
 };
 use libc::{
-    mmap, setsockopt, socket, AF_XDP, MAP_FAILED, MAP_POPULATE, MAP_SHARED, PROT_READ, PROT_WRITE,
-    SOCK_RAW, SOL_XDP,
+    getsockopt, mmap, setsockopt, socket, AF_XDP, MAP_FAILED, MAP_POPULATE, MAP_SHARED, PROT_READ,
+    PROT_WRITE, SOCK_RAW, SOL_XDP,
 };
 use std::{
     alloc, io,
@@ -100,23 +100,21 @@ impl<'a> Umem<'a> {
             return Err(io::Error::last_os_error());
         }
 
-        let mut off = MaybeUninit::<xdp_mmap_offsets>::uninit();
+        let mut off: xdp_mmap_offsets = unsafe { mem::zeroed() };
+        let mut len: libc::socklen_t = mem::size_of::<xdp_mmap_offsets>() as _;
         let ret = unsafe {
-            setsockopt(
+            getsockopt(
                 sock,
                 SOL_XDP,
                 XDP_MMAP_OFFSETS as _,
-                off.as_mut_ptr() as *const _,
-                mem::size_of::<xdp_mmap_offsets>() as u32,
+                &mut off as *mut _ as *mut _,
+                &mut len,
             )
         };
-        let off = if ret < 0 {
+        if ret < 0 {
             return Err(io::Error::last_os_error());
-        } else {
-            unsafe { off.assume_init() }
-        };
-
-        // assert!(mem::size_of::<xdp_mmap_offsets>() != mem::size_of::<xdp_mmap_offsets_v1>());
+        }
+        dbg!(off);
 
         let map = unsafe {
             mmap(

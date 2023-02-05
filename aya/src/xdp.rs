@@ -10,11 +10,7 @@ use libc::{
     getsockopt, mmap, setsockopt, socket, AF_XDP, MAP_FAILED, MAP_POPULATE, MAP_SHARED, PROT_READ,
     PROT_WRITE, SOCK_RAW, SOL_XDP,
 };
-use std::{
-    alloc, io,
-    mem::{self, MaybeUninit},
-    ptr,
-};
+use std::{alloc, io, marker::PhantomData, mem, ptr};
 
 /// WIP - will move into the main repo
 pub fn allocate_area(len: usize) -> Box<[u8]> {
@@ -35,11 +31,18 @@ pub fn check_mem_aligned(buf: &[u8]) -> usize {
 }
 
 /// WIP
+pub struct RingProd(xsk_ring_prod);
+
+/// WIP
+pub struct RingCons(xsk_ring_cons);
+
+/// WIP
 pub struct Umem<'a> {
-    fq: xsk_ring_prod,
-    cq: xsk_ring_cons,
-    // umem: xsk_umem,
-    buf: &'a mut [u8],
+    /// WIP
+    pub fq: RingProd,
+    /// WIP
+    pub cq: RingCons,
+    phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> Umem<'a> {
@@ -149,7 +152,7 @@ impl<'a> Umem<'a> {
         let cons_map = map as *mut u32;
 
         Ok(Self {
-            fq: xsk_ring_prod {
+            fq: RingProd(xsk_ring_prod {
                 mask: fill_size - 1,
                 size: fill_size,
                 producer: unsafe { prod_map.offset(off.fr.producer as _) },
@@ -158,8 +161,8 @@ impl<'a> Umem<'a> {
                 ring: unsafe { prod_map.offset(off.fr.desc as _) } as *mut _,
                 cached_cons: fill_size as _,
                 cached_prod: 0,
-            },
-            cq: xsk_ring_cons {
+            }),
+            cq: RingCons(xsk_ring_cons {
                 mask: comp_size - 1,
                 size: comp_size,
                 producer: unsafe { cons_map.offset(off.cr.producer as _) },
@@ -168,8 +171,8 @@ impl<'a> Umem<'a> {
                 ring: unsafe { cons_map.offset(off.cr.desc as _) } as *mut _,
                 cached_cons: 0,
                 cached_prod: 0,
-            },
-            buf: umem_area,
+            }),
+            phantom: PhantomData,
         })
     }
 }

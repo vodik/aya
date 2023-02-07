@@ -10,7 +10,12 @@ use libc::{
     getsockopt, mmap, setsockopt, socket, AF_XDP, MAP_FAILED, MAP_POPULATE, MAP_SHARED, PROT_READ,
     PROT_WRITE, SOCK_RAW, SOL_XDP,
 };
-use std::{alloc, io, marker::PhantomData, mem, ptr};
+use std::{
+    alloc, io,
+    marker::PhantomData,
+    mem, ptr,
+    sync::atomic::{AtomicPtr, Ordering},
+};
 
 /// WIP - will move into the main repo
 pub fn allocate_area(len: usize) -> Box<[u8]> {
@@ -35,6 +40,38 @@ pub struct RingProd(xsk_ring_prod);
 
 /// WIP
 pub struct RingCons(xsk_ring_cons);
+
+impl RingCons {
+    #[inline(always)]
+    fn nb_avail(&mut self, nb: u32) -> u32 {
+        let entries = self.0.cached_prod - self.0.cached_cons;
+        let entries = if entries == 0 {
+            let producer = AtomicPtr::new(self.0.producer as _);
+            self.0.cached_prod = producer.load(Ordering::Acquire) as _;
+            self.0.cached_prod - self.0.cached_cons
+        } else {
+            entries
+        };
+
+        u32::min(entries, nb)
+    }
+
+    /// WIP
+    #[inline(always)]
+    pub fn peek(&mut self, nb: u32) -> (u32, u32) {
+        let entries = self.nb_avail(nb);
+
+        let idx = if entries > 0 {
+            let idx = self.0.cached_cons;
+            self.0.cached_cons += entries;
+            idx
+        } else {
+            0
+        };
+
+        (entries, idx)
+    }
+}
 
 /// WIP
 pub struct Umem<'a> {
